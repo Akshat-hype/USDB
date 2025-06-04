@@ -1,3 +1,18 @@
+type UsdbAmount = nat64;
+
 service : {
-    "greet": (text) -> (text) query;
+  /// Greet the user with a message
+  greet : (text) -> (text) query;
+
+  /// Returns the total supply of USDB tokens
+  get_total_supply : () -> (UsdbAmount) query;
+
+  /// Mint `amount` of USDB tokens to the caller's balance
+  mint_usdb : (UsdbAmount) -> (UsdbAmount);
+
+  /// Burn `amount` of USDB tokens from the caller's balance
+  burn_usdb : (UsdbAmount) -> (UsdbAmount);
+
+  /// Returns the USDB balance of the caller
+  get_my_balance : () -> (UsdbAmount) query;
 }
