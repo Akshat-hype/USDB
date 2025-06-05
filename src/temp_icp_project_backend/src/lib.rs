@@ -1,9 +1,15 @@
-use ic_cdk::{api::caller, query, update};
+use ic_cdk::{api::{caller, canister_balance}, query, update};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use candid::Principal;
 
 type UsdbAmount = u64;
+
+// === Token Metadata ===
+const TOKEN_NAME: &str = "US Dollar Bitcoin";
+const TOKEN_SYMBOL: &str = "USDB";
+const DECIMALS: u8 = 8; // e.g., like BTC/ICP
+const OWNER: &str = "token_owner"; // optional: can be injected in init
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct UserBalance {
@@ -16,19 +22,40 @@ thread_local! {
     static USER_BALANCES: RefCell<Vec<UserBalance>> = RefCell::new(Vec::new());
 }
 
+/// Greets a user
 #[query]
 fn greet(name: String) -> String {
     format!("Hello, {}!", name)
 }
 
-/// Returns the total minted supply of USDB.
+/// Tokenomics metadata
+#[query]
+fn get_token_name() -> String {
+    TOKEN_NAME.to_string()
+}
+
+#[query]
+fn get_token_symbol() -> String {
+    TOKEN_SYMBOL.to_string()
+}
+
+#[query]
+fn get_decimals() -> u8 {
+    DECIMALS
+}
+
+#[query]
+fn get_token_owner() -> Principal {
+    Principal::from_text(OWNER).unwrap_or_else(|_| Principal::anonymous())
+}
+
+/// Returns total minted USDB
 #[query]
 fn get_total_supply() -> UsdbAmount {
     TOTAL_SUPPLY.with(|supply| *supply.borrow())
 }
 
-/// Mints `amount` of USDB for the caller.
-/// NOTE: In production, this should validate BTC collateral before minting.
+/// Mint `amount` of USDB to caller
 #[update]
 fn mint_usdb(amount: UsdbAmount) -> UsdbAmount {
     let minter = caller();
@@ -51,8 +78,7 @@ fn mint_usdb(amount: UsdbAmount) -> UsdbAmount {
     get_total_supply()
 }
 
-/// Burns `amount` of USDB from the caller's balance.
-/// NOTE: In production, this should trigger BTC redemption.
+/// Burn `amount` of USDB from caller
 #[update]
 fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
     let burner = caller();
@@ -83,7 +109,7 @@ fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
     get_total_supply()
 }
 
-/// Returns the caller's current USDB balance.
+/// Returns caller's balance
 #[query]
 fn get_my_balance() -> UsdbAmount {
     let current = caller();
@@ -95,4 +121,10 @@ fn get_my_balance() -> UsdbAmount {
             .find(|b| b.principal == current)
             .map_or(0, |b| b.amount)
     })
+}
+
+/// Returns the current cycle balance of the canister
+#[query]
+fn get_cycles() -> u128 {
+    canister_balance().into()
 }

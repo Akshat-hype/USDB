@@ -1,18 +1,23 @@
 type UsdbAmount = nat64;
 
 service : {
-  /// Greet the user with a message
+  // Greetings
   greet : (text) -> (text) query;
 
-  /// Returns the total supply of USDB tokens
+  // Tokenomics metadata
+  get_token_name : () -> (text) query;
+  get_token_symbol : () -> (text) query;
+  get_decimals : () -> (nat8) query;
+  get_token_owner : () -> (principal) query;
+
+  // Balance queries
+  get_my_balance : () -> (UsdbAmount) query;
   get_total_supply : () -> (UsdbAmount) query;
 
-  /// Mint `amount` of USDB tokens to the caller's balance
+  // Minting & Burning
   mint_usdb : (UsdbAmount) -> (UsdbAmount);
-
-  /// Burn `amount` of USDB tokens from the caller's balance
   burn_usdb : (UsdbAmount) -> (UsdbAmount);
 
-  /// Returns the USDB balance of the caller
-  get_my_balance : () -> (UsdbAmount) query;
+  // Canister cycles
+  get_cycles : () -> (nat) query;
 }
