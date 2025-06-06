@@ -8,8 +8,8 @@ type UsdbAmount = u64;
 // === Token Metadata ===
 const TOKEN_NAME: &str = "US Dollar Bitcoin";
 const TOKEN_SYMBOL: &str = "USDB";
-const DECIMALS: u8 = 8; // e.g., like BTC/ICP
-const OWNER: &str = "token_owner"; // optional: can be injected in init
+const DECIMALS: u8 = 8; // Like BTC/ICP
+const OWNER: &str = "token_owner"; // Replace with real owner principal if needed
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct UserBalance {
@@ -22,13 +22,13 @@ thread_local! {
     static USER_BALANCES: RefCell<Vec<UserBalance>> = RefCell::new(Vec::new());
 }
 
-/// Greets a user
+/// Greetings
 #[query]
 fn greet(name: String) -> String {
     format!("Hello, {}!", name)
 }
 
-/// Tokenomics metadata
+/// Token Metadata
 #[query]
 fn get_token_name() -> String {
     TOKEN_NAME.to_string()
@@ -49,13 +49,13 @@ fn get_token_owner() -> Principal {
     Principal::from_text(OWNER).unwrap_or_else(|_| Principal::anonymous())
 }
 
-/// Returns total minted USDB
+/// Total supply of USDB
 #[query]
 fn get_total_supply() -> UsdbAmount {
     TOTAL_SUPPLY.with(|supply| *supply.borrow())
 }
 
-/// Mint `amount` of USDB to caller
+/// Mint USDB to caller
 #[update]
 fn mint_usdb(amount: UsdbAmount) -> UsdbAmount {
     let minter = caller();
@@ -78,7 +78,7 @@ fn mint_usdb(amount: UsdbAmount) -> UsdbAmount {
     get_total_supply()
 }
 
-/// Burn `amount` of USDB from caller
+/// Burn USDB from caller
 #[update]
 fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
     let burner = caller();
@@ -109,7 +109,7 @@ fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
     get_total_supply()
 }
 
-/// Returns caller's balance
+/// Caller’s balance
 #[query]
 fn get_my_balance() -> UsdbAmount {
     let current = caller();
@@ -123,8 +123,50 @@ fn get_my_balance() -> UsdbAmount {
     })
 }
 
-/// Returns the current cycle balance of the canister
+/// Transfer USDB to another principal
+#[update]
+fn transfer_usdb(to: Principal, amount: UsdbAmount) -> String {
+    let from = caller();
+
+    if amount == 0 {
+        ic_cdk::trap("Transfer amount must be greater than 0.");
+    }
+
+    if from == to {
+        ic_cdk::trap("Cannot transfer to self.");
+    }
+
+    USER_BALANCES.with(|balances| {
+        let mut balances = balances.borrow_mut();
+
+        // Find sender
+        let sender_opt = balances.iter_mut().find(|b| b.principal == from);
+        let sender = match sender_opt {
+            Some(s) => s,
+            None => ic_cdk::trap("Sender has no balance."),
+        };
+
+        if sender.amount < amount {
+            ic_cdk::trap("Insufficient balance.");
+        }
+
+        sender.amount -= amount;
+
+        // Find or create recipient
+        match balances.iter_mut().find(|b| b.principal == to) {
+            Some(receiver) => receiver.amount += amount,
+            None => balances.push(UserBalance {
+                principal: to,
+                amount,
+            }),
+        }
+    });
+
+    format!("Transferred {} USDB to {}", amount, to)
+}
+
+/// Get current canister cycle balance
 #[query]
 fn get_cycles() -> u128 {
-    canister_balance().into()
+    canister_balance()
 }

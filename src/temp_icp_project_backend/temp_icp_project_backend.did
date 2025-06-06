@@ -4,20 +4,23 @@ service : {
   // Greetings
   greet : (text) -> (text) query;
 
-  // Tokenomics metadata
+  // Tokenomics
   get_token_name : () -> (text) query;
   get_token_symbol : () -> (text) query;
   get_decimals : () -> (nat8) query;
   get_token_owner : () -> (principal) query;
 
-  // Balance queries
+  // Balance / Supply
   get_my_balance : () -> (UsdbAmount) query;
   get_total_supply : () -> (UsdbAmount) query;
 
-  // Minting & Burning
+  // Mint / Burn
   mint_usdb : (UsdbAmount) -> (UsdbAmount);
   burn_usdb : (UsdbAmount) -> (UsdbAmount);
 
-  // Canister cycles
+  // Transfer
+  transfer_usdb : (principal, UsdbAmount) -> (text);
+
+  // Cycles
   get_cycles : () -> (nat) query;
 }
