@@ -1,26 +1,39 @@
-type UsdbAmount = nat64;
-
 service : {
-  // Greetings
-  greet : (text) -> (text) query;
+  // Standard token metadata
+  get_token_name: () -> (text) query;
+  get_token_symbol: () -> (text) query;
+  get_decimals: () -> (nat8) query;
 
-  // Tokenomics
-  get_token_name : () -> (text) query;
-  get_token_symbol : () -> (text) query;
-  get_decimals : () -> (nat8) query;
-  get_token_owner : () -> (principal) query;
+  // Owner and lifecycle
+  get_token_owner: () -> (opt principal) query;
+  pause: () -> () ;
+  unpause: () -> () ;
+  is_paused: () -> (bool) query;
 
-  // Balance / Supply
-  get_my_balance : () -> (UsdbAmount) query;
-  get_total_supply : () -> (UsdbAmount) query;
+  // Supply and balances
+  get_total_supply: () -> (nat64) query;
+  get_my_balance: () -> (nat64) query;
+  get_balance_of: (principal) -> (nat64) query;
 
-  // Mint / Burn
-  mint_usdb : (UsdbAmount) -> (UsdbAmount);
-  burn_usdb : (UsdbAmount) -> (UsdbAmount);
+  // Mint and burn (owner only)
+  mint_usdb: (nat64) -> ();
+  burn_usdb: (nat64) -> ();
 
-  // Transfer
-  transfer_usdb : (principal, UsdbAmount) -> (text);
+  // Transfers
+  transfer_usdb: (principal, nat64) -> ();
+  approve: (principal, nat64) -> ();
+  allowance: (principal, principal) -> (nat64) query;
+  transfer_from: (principal, principal, nat64) -> ();
 
-  // Cycles
-  get_cycles : () -> (nat) query;
+  // Transfers log
+  get_transfer_log: () -> (vec record {
+    from: principal;
+    to: principal;
+    amount: nat64;
+    timestamp: nat64;
+  }) query;
+
+  // Cycles stats
+  get_cycles: () -> (nat) query;
+  get_cycles_used: () -> (nat) query;
 }

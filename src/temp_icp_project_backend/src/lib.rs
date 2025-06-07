@@ -1,34 +1,56 @@
-use ic_cdk::{api::{caller, canister_balance}, query, update};
+// USDB Token Canister with advanced features
+dfn main() {}
+
+use ic_cdk::{api::{caller, canister_balance}, query, update, init};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use candid::Principal;
-
-type UsdbAmount = u64;
 
 // === Token Metadata ===
 const TOKEN_NAME: &str = "US Dollar Bitcoin";
 const TOKEN_SYMBOL: &str = "USDB";
-const DECIMALS: u8 = 8; // Like BTC/ICP
-const OWNER: &str = "token_owner"; // Replace with real owner principal if needed
+const DECIMALS: u8 = 8;
+
+type UsdbAmount = u64;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct UserBalance {
-    pub principal: Principal,
-    pub amount: UsdbAmount,
+struct TransferEvent {
+    from: Principal,
+    to: Principal,
+    amount: UsdbAmount,
+    timestamp: u64,
 }
 
 thread_local! {
     static TOTAL_SUPPLY: RefCell<UsdbAmount> = RefCell::new(0);
-    static USER_BALANCES: RefCell<Vec<UserBalance>> = RefCell::new(Vec::new());
+    static USER_BALANCES: RefCell<HashMap<Principal, UsdbAmount>> = RefCell::new(HashMap::new());
+    static OWNER: RefCell<Option<Principal>> = RefCell::new(None);
+    static TRANSFER_LOG: RefCell<Vec<TransferEvent>> = RefCell::new(Vec::new());
+    static ALLOWANCES: RefCell<HashMap<(Principal, Principal), UsdbAmount>> = RefCell::new(HashMap::new());
+    static PAUSED: RefCell<bool> = RefCell::new(false);
+    static INITIAL_CYCLES: RefCell<u128> = RefCell::new(0);
 }
 
-/// Greetings
-#[query]
-fn greet(name: String) -> String {
-    format!("Hello, {}!", name)
+#[init]
+fn init() {
+    let owner = caller();
+    OWNER.with(|o| *o.borrow_mut() = Some(owner));
+    INITIAL_CYCLES.with(|c| *c.borrow_mut() = canister_balance());
 }
 
-/// Token Metadata
+fn is_owner() -> bool {
+    OWNER.with(|o| o.borrow().map_or(false, |p| p == caller()))
+}
+
+fn check_not_paused() {
+    PAUSED.with(|p| {
+        if *p.borrow() {
+            ic_cdk::trap("Token operations are paused");
+        }
+    });
+}
+
 #[query]
 fn get_token_name() -> String {
     TOKEN_NAME.to_string()
@@ -45,128 +67,166 @@ fn get_decimals() -> u8 {
 }
 
 #[query]
-fn get_token_owner() -> Principal {
-    Principal::from_text(OWNER).unwrap_or_else(|_| Principal::anonymous())
+fn get_token_owner() -> Option<Principal> {
+    OWNER.with(|o| *o.borrow())
 }
 
-/// Total supply of USDB
 #[query]
 fn get_total_supply() -> UsdbAmount {
     TOTAL_SUPPLY.with(|supply| *supply.borrow())
 }
 
-/// Mint USDB to caller
-#[update]
-fn mint_usdb(amount: UsdbAmount) -> UsdbAmount {
-    let minter = caller();
-
-    TOTAL_SUPPLY.with(|supply| {
-        *supply.borrow_mut() += amount;
-    });
-
-    USER_BALANCES.with(|balances| {
-        let mut balances = balances.borrow_mut();
-        match balances.iter_mut().find(|b| b.principal == minter) {
-            Some(user) => user.amount += amount,
-            None => balances.push(UserBalance {
-                principal: minter,
-                amount,
-            }),
-        }
-    });
-
-    get_total_supply()
-}
-
-/// Burn USDB from caller
-#[update]
-fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
-    let burner = caller();
-
-    let mut user_found = false;
-
-    USER_BALANCES.with(|balances| {
-        let mut balances = balances.borrow_mut();
-
-        if let Some(user) = balances.iter_mut().find(|b| b.principal == burner) {
-            if user.amount >= amount {
-                user.amount -= amount;
-                user_found = true;
-
-                TOTAL_SUPPLY.with(|supply| {
-                    *supply.borrow_mut() -= amount;
-                });
-            } else {
-                ic_cdk::trap("Insufficient USDB balance to burn.");
-            }
-        }
-    });
-
-    if !user_found {
-        ic_cdk::trap("No USDB balance found for caller.");
-    }
-
-    get_total_supply()
-}
-
-/// Caller’s balance
 #[query]
 fn get_my_balance() -> UsdbAmount {
-    let current = caller();
-
-    USER_BALANCES.with(|balances| {
-        balances
-            .borrow()
-            .iter()
-            .find(|b| b.principal == current)
-            .map_or(0, |b| b.amount)
-    })
+    get_balance_of(caller())
 }
 
-/// Transfer USDB to another principal
+#[query]
+fn get_balance_of(account: Principal) -> UsdbAmount {
+    USER_BALANCES.with(|b| *b.borrow().get(&account).unwrap_or(&0))
+}
+
 #[update]
-fn transfer_usdb(to: Principal, amount: UsdbAmount) -> String {
+fn mint_usdb(amount: UsdbAmount) {
+    if !is_owner() {
+        ic_cdk::trap("Only owner can mint");
+    }
+    check_not_paused();
+    let to = caller();
+
+    TOTAL_SUPPLY.with(|supply| *supply.borrow_mut() += amount);
+    USER_BALANCES.with(|b| {
+        let mut balances = b.borrow_mut();
+        *balances.entry(to).or_insert(0) += amount;
+    });
+}
+
+#[update]
+fn burn_usdb(amount: UsdbAmount) {
+    check_not_paused();
     let from = caller();
 
-    if amount == 0 {
-        ic_cdk::trap("Transfer amount must be greater than 0.");
-    }
-
-    if from == to {
-        ic_cdk::trap("Cannot transfer to self.");
-    }
-
-    USER_BALANCES.with(|balances| {
-        let mut balances = balances.borrow_mut();
-
-        // Find sender
-        let sender_opt = balances.iter_mut().find(|b| b.principal == from);
-        let sender = match sender_opt {
-            Some(s) => s,
-            None => ic_cdk::trap("Sender has no balance."),
-        };
-
-        if sender.amount < amount {
-            ic_cdk::trap("Insufficient balance.");
+    USER_BALANCES.with(|b| {
+        let mut balances = b.borrow_mut();
+        let balance = balances.entry(from).or_insert(0);
+        if *balance < amount {
+            ic_cdk::trap("Insufficient balance");
         }
-
-        sender.amount -= amount;
-
-        // Find or create recipient
-        match balances.iter_mut().find(|b| b.principal == to) {
-            Some(receiver) => receiver.amount += amount,
-            None => balances.push(UserBalance {
-                principal: to,
-                amount,
-            }),
-        }
+        *balance -= amount;
     });
 
-    format!("Transferred {} USDB to {}", amount, to)
+    TOTAL_SUPPLY.with(|supply| *supply.borrow_mut() -= amount);
 }
 
-/// Get current canister cycle balance
+#[update]
+fn transfer_usdb(to: Principal, amount: UsdbAmount) {
+    check_not_paused();
+    let from = caller();
+
+    if from == to || amount == 0 {
+        ic_cdk::trap("Invalid transfer");
+    }
+
+    USER_BALANCES.with(|b| {
+        let mut balances = b.borrow_mut();
+        let sender_balance = balances.entry(from).or_insert(0);
+        if *sender_balance < amount {
+            ic_cdk::trap("Insufficient balance");
+        }
+        *sender_balance -= amount;
+        *balances.entry(to).or_insert(0) += amount;
+    });
+
+    TRANSFER_LOG.with(|log| {
+        log.borrow_mut().push(TransferEvent {
+            from,
+            to,
+            amount,
+            timestamp: ic_cdk::api::time(),
+        });
+    });
+}
+
+#[query]
+fn get_transfer_log() -> Vec<TransferEvent> {
+    TRANSFER_LOG.with(|log| log.borrow().clone())
+}
+
+#[update]
+fn approve(spender: Principal, amount: UsdbAmount) {
+    check_not_paused();
+    ALLOWANCES.with(|a| {
+        a.borrow_mut().insert((caller(), spender), amount);
+    });
+}
+
+#[query]
+fn allowance(owner: Principal, spender: Principal) -> UsdbAmount {
+    ALLOWANCES.with(|a| *a.borrow().get(&(owner, spender)).unwrap_or(&0))
+}
+
+#[update]
+fn transfer_from(from: Principal, to: Principal, amount: UsdbAmount) {
+    check_not_paused();
+    let spender = caller();
+
+    ALLOWANCES.with(|a| {
+        let mut allowances = a.borrow_mut();
+        let key = (from, spender);
+        let allowed = allowances.get(&key).cloned().unwrap_or(0);
+        if allowed < amount {
+            ic_cdk::trap("Allowance too low");
+        }
+        allowances.insert(key, allowed - amount);
+    });
+
+    USER_BALANCES.with(|b| {
+        let mut balances = b.borrow_mut();
+        let from_balance = balances.entry(from).or_insert(0);
+        if *from_balance < amount {
+            ic_cdk::trap("From balance too low");
+        }
+        *from_balance -= amount;
+        *balances.entry(to).or_insert(0) += amount;
+    });
+
+    TRANSFER_LOG.with(|log| {
+        log.borrow_mut().push(TransferEvent {
+            from,
+            to,
+            amount,
+            timestamp: ic_cdk::api::time(),
+        });
+    });
+}
+
+#[update]
+fn pause() {
+    if !is_owner() {
+        ic_cdk::trap("Only owner can pause");
+    }
+    PAUSED.with(|p| *p.borrow_mut() = true);
+}
+
+#[update]
+fn unpause() {
+    if !is_owner() {
+        ic_cdk::trap("Only owner can unpause");
+    }
+    PAUSED.with(|p| *p.borrow_mut() = false);
+}
+
+#[query]
+fn is_paused() -> bool {
+    PAUSED.with(|p| *p.borrow())
+}
+
 #[query]
 fn get_cycles() -> u128 {
     canister_balance()
+}
+
+#[query]
+fn get_cycles_used() -> u128 {
+    INITIAL_CYCLES.with(|c| c.borrow().saturating_sub(canister_balance()))
 }
