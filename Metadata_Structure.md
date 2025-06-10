@@ -3,7 +3,7 @@
 // Represents the metadata for a single Rune token
 
 struct RuneMetadata {
-    
+
     // A unique identifier for each rune (e.g., UUID, hash, or counter-based ID)
     rune_id: String,
 
@@ -33,17 +33,23 @@ struct RuneMetadata {
 }
 
 // Represents the current state of a Rune in its lifecycle
+
 enum RuneStatus {
+
     Active,     // Currently valid and transferable
     Burned,     // Permanently destroyed and no longer valid
     Pending,    // Awaiting confirmation, mint, or transfer
+
 }
 
 // Primary storage mapping from unique Rune ID to its metadata
+
 let rune_store: HashMap<String, RuneMetadata>;
 
 // Maps each principal (user) to a list of rune_ids they own
+
 let owner_index: HashMap<Principal, Vec<String>>;
 
 // Maps each status to rune_ids for batch querying
+
 let status_index: HashMap<RuneStatus, Vec<String>>;
