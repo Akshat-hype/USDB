@@ -1,6 +1,7 @@
 # Metadata structure and storage format for each rune
 
 // Represents the metadata for a single Rune token
+
 struct RuneMetadata {
     // A unique identifier for each rune (e.g., UUID, hash, or counter-based ID)
     rune_id: String,
