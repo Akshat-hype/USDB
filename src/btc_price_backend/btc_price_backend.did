@@ -1,0 +1,4 @@
+service : {
+  fetch_btc_price: () -> (text);
+  get_last_price: () -> (opt float64) query;
+};

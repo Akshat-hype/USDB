@@ -5,6 +5,12 @@
       "package": "temp_icp_project_backend",
       "type": "rust"
     },
+    "btc_price_backend": {
+  "type": "custom",
+  "candid": "src/btc_price_backend/src/btc_price_backend.did",
+  "wasm": "target/wasm32-unknown-unknown/release/btc_price_backend.wasm",
+  "build": "cargo build --target wasm32-unknown-unknown --release --manifest-path src/btc_price_backend/Cargo.toml"
+},
     "temp_icp_project_frontend": {
       "dependencies": [
         "temp_icp_project_backend"
@@ -15,6 +21,7 @@
       "type": "assets",
       "workspace": "temp_icp_project_frontend"
     }
+
   },
   "defaults": {
     "build": {

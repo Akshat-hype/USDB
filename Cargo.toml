@@ -1,5 +1,6 @@
 [workspace]
 members = [
-    "src/temp_icp_project_backend"
+    "src/temp_icp_project_backend",
+    "src/btc_price_backend"
 ]
 resolver = "2"
