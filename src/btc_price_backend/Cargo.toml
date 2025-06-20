@@ -7,8 +7,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-ic-cdk = "0.8.0"
-ic-cdk-macros = "0.8.0"
+ic-cdk = "0.17.2"
+ic-cdk-macros = "0.18.2"
+futures = "0.3"
+candid = "0.10.14"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-reqwest = { version = "0.11", features = ["json", "blocking", "rustls-tls"] }
+time = "0.3"  # ✅ Added for OffsetDateTime (if needed)
