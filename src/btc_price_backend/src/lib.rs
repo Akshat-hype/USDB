@@ -1,54 +1,36 @@
 use ic_cdk::api::management_canister::http_request::{
     http_request, CanisterHttpRequestArgument, HttpMethod, HttpHeader,
 };
-use ic_cdk::{query, update};
-use serde::{Deserialize, Serialize};
+use ic_cdk::{update,query};
 use std::cell::RefCell;
 
-thread_local! {
-    static BTC_PRICE: RefCell<Option<f64>> = RefCell::new(None);
+thread_local!{
+    static BTC_PRICE:RefCell<String> = RefCell::new("0.0".to_string());
 }
-
-#[derive(Deserialize)]
-struct TaapiResponse {
-    value: f64,
-}
-
 #[update]
-async fn fetch_btc_price() -> String {
-    let url = "https://api.taapi.io/price?secret=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbHVlIjoiNjVjYzg5MzIxNDBjZmQ3MjNkYTlhMTZmIiwiaWF0IjoxNzA3OTAzMjgyLCJleHAiOjMzMjEyMzY3MjgyfQ.26yhTp17R-A9duiLhSmsOk3BhkCv72fo0Oolmy2aAtA&exchange=binance&symbol=BTC/USDT&interval=1m";
+async fn update_btc_price() {
+    let url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT";
 
     let request = CanisterHttpRequestArgument {
         url: url.to_string(),
+        max_response_bytes: Some(1024),
         method: HttpMethod::GET,
         headers: vec![HttpHeader {
-            name: "Accept".to_string(),
-            value: "application/json".to_string(),
+            name: "X-MBX-APIKEY".to_string(),
+            value: "your-api-key-here".to_string(),
         }],
         body: None,
-        max_response_bytes: Some(2048),
         transform: None,
     };
 
-    match http_request(request).await {
-        Ok((response,)) => {
-            if response.status == 200 {
-                if let Ok(result) = serde_json::from_slice::<TaapiResponse>(&response.body) {
-                    BTC_PRICE.with(|p| *p.borrow_mut() = Some(result.value));
-                    format!("Fetched BTC price: {}", result.value)
-                } else {
-                    "Failed to parse price".to_string()
-                }
-            } else {
-                format!("HTTP error: {}", response.status)
-            }
-        }
-        Err(e) => format!("HTTP call failed: {:?}", e),
-    }
+    let cycles: i32 = 5_000_000_000; // 5B cycles (adjust as needed)
+    let (response,) = http_request(request, cycles).await.unwrap();
+    let price = String::from_utf8(response.body).unwrap();
+    BTC_PRICE.with(|p| p.replace(price));
 }
+
 
 #[query]
-fn get_last_price() -> Option<f64> {
-    BTC_PRICE.with(|p| *p.borrow())
+fn get_btc_price()->String{
+    BTC_PRICE.with(|p| p.borrow().clone())
 }
-
