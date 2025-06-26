@@ -22,7 +22,7 @@ async fn get_btc_price() -> String {
         transform: None,
     };
 
-    let cycles: u128 = 5_000_000_000;
+    let cycles: u128 = 5_000_000_000 ;
 
     // Fetch latest price
     if let Ok((response,)) = http_request(request, cycles).await {
