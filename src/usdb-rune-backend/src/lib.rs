@@ -1,53 +1,46 @@
-
-use ic_cdk::{api::{caller}, query, update};
-use serde::{Deserialize, Serialize}; 
+use ic_cdk::{api::caller, query, update};
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
+use candid::Principal;
 
 type UsdbAmount = u64;
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct UserBalance {
-    pub principal: candid::Principal,
-    pub amount: UsdbAmount,
+    principal: Principal,
+    amount: UsdbAmount,
 }
-
-
 
 thread_local! {
     static TOTAL_SUPPLY: RefCell<UsdbAmount> = RefCell::new(0);
     static USER_BALANCES: RefCell<Vec<UserBalance>> = RefCell::new(Vec::new());
 }
 
-
 #[query]
-fn greet(name: String) -> String {
-    format!("Hello, {}!", name)
+fn greet(user: String) -> String {
+    format!("Hello, {}!", user)
 }
 
-/// Returns the current total supply of USDB.
 #[query]
 fn get_total_supply() -> UsdbAmount {
     TOTAL_SUPPLY.with(|supply| *supply.borrow())
 }
 
-/// A placeholder mint function. In reality, this would involve BTC collateral.
-/// For now, it just increases total supply and a user's balance.
 #[update]
 fn mint_usdb(amount: UsdbAmount) -> UsdbAmount {
-    let minter = caller();
+    let user = caller();
 
     TOTAL_SUPPLY.with(|supply| {
         *supply.borrow_mut() += amount;
     });
 
     USER_BALANCES.with(|balances| {
-        let mut balances = balances.borrow_mut();
-        if let Some(entry) = balances.iter_mut().find(|b| b.principal == minter) {
+        let mut user_balances = balances.borrow_mut();
+        if let Some(entry) = user_balances.iter_mut().find(|b| b.principal == user) {
             entry.amount += amount;
         } else {
-            balances.push(UserBalance {
-                principal: minter,
+            user_balances.push(UserBalance {
+                principal: user,
                 amount,
             });
         }
@@ -56,16 +49,13 @@ fn mint_usdb(amount: UsdbAmount) -> UsdbAmount {
     get_total_supply()
 }
 
-
-/// A placeholder burn function. In reality, this would involve releasing BTC collateral.
-/// For now, it just decreases total supply and a user's balance.
 #[update]
 fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
-    let burner = caller();
+    let user = caller();
 
     USER_BALANCES.with(|balances| {
-        let mut balances = balances.borrow_mut();
-        if let Some(entry) = balances.iter_mut().find(|b| b.principal == burner) {
+        let mut user_balances = balances.borrow_mut();
+        if let Some(entry) = user_balances.iter_mut().find(|b| b.principal == user) {
             if entry.amount >= amount {
                 entry.amount -= amount;
                 TOTAL_SUPPLY.with(|supply| {
@@ -82,15 +72,14 @@ fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
     get_total_supply()
 }
 
-
 #[query]
 fn get_my_balance() -> UsdbAmount {
-    let current = caller();
+    let user = caller();
     USER_BALANCES.with(|balances| {
         balances
             .borrow()
             .iter()
-            .find(|b| b.principal == current)
+            .find(|b| b.principal == user)
             .map_or(0, |b| b.amount)
     })
 }
