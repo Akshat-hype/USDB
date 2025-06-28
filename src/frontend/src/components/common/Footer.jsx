@@ -1,11 +1,7 @@
 import React from "react";
 import { FooterLink2 } from "../../assets/data/footer-links";
 import { Link } from "react-router-dom";
-
-// Images
 import Logo from "../../assets/Logo/USDB-Image.jpg";
-
-// Icons
 import { FaFacebook, FaGoogle, FaTwitter, FaYoutube } from "react-icons/fa";
 
 const BottomFooter = ["Privacy Policy", "Cookie Policy", "Terms"];
@@ -20,6 +16,7 @@ const Resources = [
   "USDB Channels",
   "Security Features"
 ];
+
 const Products = ["USDB token","USDB Gold token","Alloy by USDB"];
 const Solutions = ["For Individuals", "For Merchants", "For Exchanges"];
 
@@ -74,6 +71,7 @@ const Footer = () => {
                     </div>
                   );
                 })}
+
               </div>
 
               <h1 className="text-richblack-50 font-semibold text-[16px] mt-7">
@@ -150,6 +148,7 @@ const Footer = () => {
         </div>
       </div>
 
+
       <div className="flex flex-row items-center justify-between w-11/12 max-w-maxContent text-richblack-400 mx-auto  pb-14 text-sm">
         {/* Section 1 */}
         <div className="flex justify-between lg:items-start items-center flex-col lg:flex-row gap-3 w-full">
@@ -175,6 +174,7 @@ const Footer = () => {
         </div>
       </div>
     </div>
+
   );
 };
 
