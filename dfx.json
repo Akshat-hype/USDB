@@ -10,6 +10,11 @@
       "package": "btc_price_backend",
       "type": "rust"
 },
+    "usdb-rune-backend": {
+      "candid": "src/usdb-rune-backend/usdb-rune-backend.did",
+      "package": "usdb-rune-backend",
+      "type": "rust"
+    },
     "temp_icp_project_frontend": {
       "dependencies": [
         "temp_icp_project_backend"

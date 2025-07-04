@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "src/temp_icp_project_backend",
-    "src/btc_price_backend"
+    "src/btc_price_backend",
+    "src/usdb-rune-backend"
 ]
-resolver = "2"
+resolver = "3"
