@@ -1,7 +1,7 @@
-use ic_cdk::{api::caller, query, update};
+use ic_cdk::{api::caller, call, update};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
-use candid::Principal;
+use candid::{CandidType, Principal};
 
 type UsdbAmount = u64;
 
@@ -16,19 +16,40 @@ thread_local! {
     static USER_BALANCES: RefCell<Vec<UserBalance>> = RefCell::new(Vec::new());
 }
 
-#[query]
-fn greet(user: String) -> String {
-    format!("Hello, {}!", user)
-}
-
-#[query]
-fn get_total_supply() -> UsdbAmount {
-    TOTAL_SUPPLY.with(|supply| *supply.borrow())
+#[derive(CandidType, Serialize, Deserialize)]
+struct MintResponse {
+    btc_required: f64,
+    btc_price: f64,
+    btc_address: String,
 }
 
 #[update]
-fn mint_usdb(amount: UsdbAmount) -> UsdbAmount {
+async fn initiate_usdb_mint(amount: UsdbAmount) -> MintResponse {
+    let btc_price_canister: Principal = Principal::from_text("bkyz2-fmaaa-aaaaa-qaaaq-cai").unwrap();
+
+    let (price_str,): (String,) = call(btc_price_canister, "get_btc_price", ()).await.unwrap_or(("0.0".to_string(),));
+    let btc_price: f64 = price_str.parse().unwrap_or(0.0);
+
+    if btc_price <= 0.0 {
+        ic_cdk::trap("Invalid BTC price received");
+    }
+
+    let btc_required = (amount as f64) / btc_price;
+
+    let btc_address = "tb1qmc3r3vnjtzfj2slehrklehw5vmqr3je8d8wzc6".to_string(); // Use a real/test address here
+
+    MintResponse {
+        btc_required,
+        btc_price,
+        btc_address,
+    }
+}
+
+#[update]
+fn confirm_and_mint(amount: UsdbAmount) -> UsdbAmount {
     let user = caller();
+
+    // This is where you'd verify BTC payment (currently skipped for testing)
 
     TOTAL_SUPPLY.with(|supply| {
         *supply.borrow_mut() += amount;
@@ -46,7 +67,7 @@ fn mint_usdb(amount: UsdbAmount) -> UsdbAmount {
         }
     });
 
-    get_total_supply()
+    amount
 }
 
 #[update]
@@ -69,10 +90,10 @@ fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
         }
     });
 
-    get_total_supply()
+    amount
 }
 
-#[query]
+#[update]
 fn get_my_balance() -> UsdbAmount {
     let user = caller();
     USER_BALANCES.with(|balances| {
@@ -82,4 +103,9 @@ fn get_my_balance() -> UsdbAmount {
             .find(|b| b.principal == user)
             .map_or(0, |b| b.amount)
     })
+}
+
+#[update]
+fn get_total_supply() -> UsdbAmount {
+    TOTAL_SUPPLY.with(|supply| *supply.borrow())
 }

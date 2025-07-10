@@ -1,8 +1,13 @@
+type MintResponse = record {
+  btc_required: float64;
+  btc_price: float64;
+  btc_address: text;
+};
+
 service : {
-  "get_owner": () -> (opt principal) query;
-  "burn_usdb": (nat64) -> (nat64);
-  "get_my_balance": () -> (nat64) query;
-  "get_total_supply": () -> (nat64) query; 
-  "greet": (text) -> (text) query;
-  "mint_usdb": (nat64) -> (nat64);
+  initiate_usdb_mint: (nat64) -> (MintResponse);
+  confirm_and_mint: (nat64) -> (nat64);
+  burn_usdb: (nat64) -> (nat64);
+  get_my_balance: () -> (nat64);
+  get_total_supply: () -> (nat64);
 }
