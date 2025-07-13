@@ -192,11 +192,11 @@ fn is_paused() -> bool {
 
 #[query]
 fn get_cycles() -> u128 {
-    canister_balance()
+    canister_balance().into()
 }
 #[query]
 fn get_cycles_used() -> u128 {
-    INITIAL_CYCLES.with(|c| c.borrow().saturating_sub(canister_balance()))
+    INITIAL_CYCLES.with(|c| c.borrow().saturating_sub(canister_balance().into()))
 }
 
 /// Convert Unix epoch millis to an RFC3339 datetime string
