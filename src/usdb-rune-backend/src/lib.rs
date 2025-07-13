@@ -34,7 +34,7 @@ async fn initiate_usdb_mint(amount: UsdbAmount) -> MintResponse {
         ic_cdk::trap("Invalid BTC price received");
     }
 
-    let btc_required = (amount as f64) / btc_price;
+    let btc_required = (amount as f64) / btc_price; 
 
     let btc_address = "tb1qmc3r3vnjtzfj2slehrklehw5vmqr3je8d8wzc6".to_string(); // Use a real/test address here
 
