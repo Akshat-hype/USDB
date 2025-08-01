@@ -5,7 +5,7 @@ use ic_cdk::{
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use candid::Principal;
+use candid::{Principal, CandidType};
 
 // === Token Metadata ===
 const TOKEN_NAME: &str = "US Dollar Bitcoin";
@@ -13,7 +13,7 @@ const TOKEN_SYMBOL: &str = "USDB";
 const DECIMALS: u8 = 8;
 type UsdbAmount = u64;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(CandidType, Serialize, Deserialize, Clone, Debug)]
 struct TransferEvent {
     from: Principal,
     to: Principal,
@@ -35,7 +35,7 @@ thread_local! {
 fn init() {
     let owner = caller();
     OWNER.with(|o| *o.borrow_mut() = Some(owner));
-    INITIAL_CYCLES.with(|c| *c.borrow_mut() = canister_balance());
+    INITIAL_CYCLES.with(|c| *c.borrow_mut() = canister_balance() as u128);
 }
 
 fn is_owner() -> bool {
@@ -202,7 +202,7 @@ fn get_cycles_used() -> u128 {
 /// Convert Unix epoch millis to an RFC3339 datetime string
 #[query]
 fn to_readable_timestamp(ts: u64) -> String {
-    use time::{OffsetDateTime, format_description::well_known::Rfc3339};
+    use ::time::{OffsetDateTime, format_description::well_known::Rfc3339};
     OffsetDateTime::from_unix_timestamp((ts / 1000) as i64)
         .map(|dt| dt.format(&Rfc3339).unwrap_or_else(|_| "Invalid timestamp".to_string()))
         .unwrap_or_else(|_| "Invalid timestamp".to_string())
