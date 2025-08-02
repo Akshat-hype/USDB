@@ -1,53 +1,57 @@
-const BitcoinCore = require("bitcoin-core");
-const { HttpAgent, Identity, Actor } = require("@dfinity/agent");
-const { idlFactory } = require("../.dfx/local/canisters/usdb-rune-backend/usdb-rune-backend.did.js");
-const fetch = require("node-fetch");
+import fetch from 'node-fetch';
+import {
+  BTC_NODE_URL,
+  RPC_USER,
+  RPC_PASS,
+  DEPOSIT_ADDRESSES,
+  POLL_INTERVAL,
+} from './config.js';
 
-global.fetch = fetch; // Required for @dfinity/agent
+import { notifyCanister } from './notify_canister.js';
 
-// Setup Bitcoin RPC
-const client = new BitcoinCore({
-  network: "regtest",
-  username: "yourrpcuser",
-  password: "yourrpcpassword",
-  port: 18443,
-  host: "127.0.0.1"
-});
+async function callRPC(method, params = []) {
+  const response = await fetch(BTC_NODE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      jsonrpc: '1.0',
+      id: 'watcher',
+      method,
+      params,
+    }),
+    auth: `${RPC_USER}:${RPC_PASS}`,
+  });
 
-// Your canister ID & principal mapping
-const USDB_CANISTER_ID = "your-canister-id";
-const userMap = {
-  "tb1qmc3r3vnjtzfj2slehrklehw5vmqr3je8d8wzc6": {
-    principal: "user-principal-here",
-    amount: 1000
+  const data = await response.json();
+  if (data.error) {
+    console.error(`RPC Error:`, data.error);
+    return null;
   }
-};
+  return data.result;
+}
 
-// Setup Internet Computer Agent
-const agent = new HttpAgent({ host: "http://127.0.0.1:4943" }); // local replica
+async function pollMempool() {
+  const txids = await callRPC('getrawmempool');
+  if (!txids) return;
 
-const usdb = Actor.createActor(idlFactory, {
-  agent,
-  canisterId: USDB_CANISTER_ID,
-});
+  for (const txid of txids) {
+    const rawTx = await callRPC('getrawtransaction', [txid, true]);
+    if (!rawTx || !rawTx.vout) continue;
 
-// Monitor BTC mempool or latest block
-async function checkTransactions() {
-  const transactions = await client.listTransactions("*", 100);
-  for (let tx of transactions) {
-    if (tx.category === "receive" && userMap[tx.address]) {
-      const user = userMap[tx.address];
-      console.log(`✅ Received ${tx.amount} BTC for ${user.principal}`);
-
-      try {
-        const result = await usdb.confirm_and_mint(user.amount, [tx.txid]);
-        console.log("🎉 Minted USDB:", result);
-        delete userMap[tx.address]; // Prevent re-processing
-      } catch (err) {
-        console.error("Minting failed:", err);
+    for (const output of rawTx.vout) {
+      const addresses = output.scriptPubKey.addresses || [];
+      const matched = addresses.find(addr => DEPOSIT_ADDRESSES.includes(addr));
+      if (matched) {
+        const amount = Math.floor(output.value * 100000000); // satoshis
+        console.log(`📥 UTXO detected for ${matched}: ${amount} sats`);
+        notifyCanister(txid, matched, amount);
       }
     }
   }
 }
 
-setInterval(checkTransactions, 10_000); // Check every 10 seconds
+// 🌀 Start polling loop
+setInterval(pollMempool, POLL_INTERVAL);
+console.log('👁️ Watcher started...');
