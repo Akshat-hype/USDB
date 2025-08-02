@@ -5,6 +5,11 @@
       "package": "temp_icp_project_backend",
       "type": "rust"
     },
+    "USDB_mint": {
+      "candid": "src/USDB_mint/USDB_mint.did",
+      "package": "USDB_mint",
+      "type": "rust"
+    },
     "btc_price_backend": {
       "candid": "src/btc_price_backend/btc_price_backend.did",
       "package": "btc_price_backend",
