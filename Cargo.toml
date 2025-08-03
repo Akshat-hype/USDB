@@ -2,6 +2,7 @@
 members = [
     "src/temp_icp_project_backend",
     "src/btc_price_backend",
-    "src/usdb-rune-backend"
+    "src/usdb-rune-backend",
+    "src/USDB_mint",
 ]
 resolver = "3"
