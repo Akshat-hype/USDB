@@ -5,12 +5,13 @@ import {
   RPC_PASS,
   DEPOSIT_ADDRESSES,
   POLL_INTERVAL,
+  rpcURL
 } from './config.js';
 
 import { notifyCanister } from './notify_canister.js';
 
 async function callRPC(method, params = []) {
-  const response = await fetch(BTC_NODE_URL, {
+  const res = await fetch(rpcURL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -21,16 +22,15 @@ async function callRPC(method, params = []) {
       method,
       params,
     }),
-    auth: `${RPC_USER}:${RPC_PASS}`,
   });
 
-  const data = await response.json();
-  if (data.error) {
-    console.error(`RPC Error:`, data.error);
-    return null;
-  }
-  return data.result;
+  const text = await res.text(); // get raw response
+  console.log("📦 Raw RPC Response:", text);
+
+  return JSON.parse(text); // then try parsing
 }
+
+
 
 async function pollMempool() {
   const txids = await callRPC('getrawmempool');
