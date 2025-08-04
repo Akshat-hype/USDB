@@ -1,0 +1,9 @@
+[package]
+name = "greeting_canister"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ic-cdk = "0.12.1"
+ic-cdk-macros = "0.8.0"
+candid = "0.9.5"
