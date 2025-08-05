@@ -1,7 +1,7 @@
 export const BTC_NODE_URL = 'http://127.0.0.1:18443'; // regtest RPC
-export const rpcURL = `http://bitcoinrpc:your_secure_password_here@127.0.0.1:18443/`; // wallet-specific RPC endpoint
+export const rpcURL = `${BTC_NODE_URL}`;
 export const RPC_USER = 'bitcoinrpc';
-export const RPC_PASS = 'your_secure_password_here';
+export const RPC_PASS = 'your_secure_password_here'; // 🔒 Replace with actual password
 
 export const DEPOSIT_ADDRESSES = [
   'bcrt1qzy3tvw4r2lgja35er4qe0jr9cjmzcvjy8xdfje',
