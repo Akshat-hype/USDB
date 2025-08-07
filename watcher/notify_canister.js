@@ -11,3 +11,7 @@ export function notifyCanister(txid, address, amount) {
     console.log(`✅ Canister notified:`, stdout);
   });
 }
+notify_canister.js
+// export function notifyCanister(txid, address, amount) {
+//   console.log(`📢 Notify: TXID=${txid}, Address=${address}, Amount=${amount} sats`);
+// }
