@@ -1,6 +1,8 @@
+// token_canister.did
+
+type principal = principal;
+type TokenAmount = nat64;
+
 service : {
-  "mint": (principal, nat64) -> (text);
-  "get_balance_of": (principal) -> (nat64) query;
-  "get_my_balance": () -> (nat64) query;
-  "get_total_supply": () -> (nat64) query;
+  "greet": (text) -> (text) query;
 }
