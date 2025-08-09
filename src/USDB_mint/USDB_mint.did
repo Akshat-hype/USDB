@@ -1,3 +1,6 @@
 service : {
-  "greet": (text) -> (text) query;
+  "mint": (principal, nat64) -> (text);
+  "get_balance_of": (principal) -> (nat64) query;
+  "get_my_balance": () -> (nat64) query;
+  "get_total_supply": () -> (nat64) query;
 }
