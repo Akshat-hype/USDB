@@ -1,0 +1,3 @@
+service : {
+    notify_btc_received: (address: text, amount: float) -> ();
+}
