@@ -5,6 +5,11 @@
       "package": "temp_icp_project_backend",
       "type": "rust"
     },
+    "notify_btc_recieved": {
+      "candid": "src/notify_btc_recieved/notify_btc_recieved.did",
+      "package": "notify_btc_recieved",
+      "type": "rust"
+    },
     "USDB_mint": {
       "candid": "src/USDB_mint/USDB_mint.did",
       "package": "USDB_mint",
