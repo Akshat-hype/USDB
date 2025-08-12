@@ -1,13 +1,27 @@
 type MintResult = record {
-    total_supply: nat64;
-    user_balance: nat64;
+    total_supply: nat;
+    user_balance: nat;
+};
+
+type Result = variant {
+    ok: MintResult;
+    err: text;
 };
 
 service : {
     greet : (text) -> (text) query;
-    get_total_supply : () -> (nat64) query;
-    get_my_balance : () -> (nat64) query;
-    mint_usdb : (nat64) -> (MintResult);
-    burn_usdb : (nat64) -> (MintResult);
-    transfer_usdb : (principal, nat64) -> ();
+
+    get_total_supply : () -> (nat) query;
+    get_my_balance : () -> (nat) query;
+    get_user_balance : (principal) -> (nat) query;
+
+    get_metadata : () -> (record { 
+        name: text; 
+        symbol: text; 
+        decimals: nat8 
+    }) query;
+
+    usdb_mint : (nat) -> (Result);
+    usdb_burn : (nat) -> (Result);
+    usdb_transfer : (principal, nat) -> (Result);
 }
