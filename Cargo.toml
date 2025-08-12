@@ -4,5 +4,6 @@ members = [
     "src/btc_price_backend",
     "src/usdb-rune-backend",
     "src/USDB_mint",
+    "src/notify_btc_recieved",
 ]
 resolver = "3"

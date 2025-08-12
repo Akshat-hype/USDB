@@ -23,6 +23,7 @@ struct MintResponse {
     btc_address: String,
 }
 
+
 #[update]
 async fn initiate_usdb_mint(amount: UsdbAmount) -> MintResponse {
     let btc_price_canister: Principal = Principal::from_text("bkyz2-fmaaa-aaaaa-qaaaq-cai").unwrap();
@@ -44,6 +45,7 @@ async fn initiate_usdb_mint(amount: UsdbAmount) -> MintResponse {
         btc_address,
     }
 }
+
 
 #[update]
 fn confirm_and_mint(amount: UsdbAmount) -> UsdbAmount {
@@ -70,6 +72,7 @@ fn confirm_and_mint(amount: UsdbAmount) -> UsdbAmount {
     amount
 }
 
+
 #[update]
 fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
     let user = caller();
@@ -93,6 +96,7 @@ fn burn_usdb(amount: UsdbAmount) -> UsdbAmount {
     amount
 }
 
+
 #[update]
 fn get_my_balance() -> UsdbAmount {
     let user = caller();
@@ -104,6 +108,7 @@ fn get_my_balance() -> UsdbAmount {
             .map_or(0, |b| b.amount)
     })
 }
+
 
 #[update]
 fn get_total_supply() -> UsdbAmount {
