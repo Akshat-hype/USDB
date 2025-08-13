@@ -6,10 +6,18 @@
       "type": "rust"
     },
     "notify_btc_recieved": {
-      "candid": "src/notify_btc_recieved/notify_btc_recieved.did",
-      "package": "notify_btc_recieved",
-      "type": "rust"
+  "type": "rust",
+  "main": "src/notify_btc_recieved/lib.rs",
+  "candid": "src/notify_btc_recieved/notify_btc_recieved.did",
+  "package": "notify_btc_recieved"
     },
+    "temp_icp_project_frontend_assets": {
+      "source": [
+        "src/temp_icp_project_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "temp_icp_project_frontend"
+},
     "USDB_mint": {
       "candid": "src/USDB_mint/USDB_mint.did",
       "package": "USDB_mint",
