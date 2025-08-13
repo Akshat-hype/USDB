@@ -57,7 +57,6 @@ const Footer = () => {
               <h1 className="text-richblack-50 font-semibold text-[16px]">
                 Resources
               </h1>
-
               <div className="flex flex-col gap-2 mt-2">
                 {Resources.map((ele, index) => {
                   return (
@@ -71,7 +70,6 @@ const Footer = () => {
                     </div>
                   );
                 })}
-
               </div>
 
               <h1 className="text-richblack-50 font-semibold text-[16px] mt-7">
@@ -121,6 +119,7 @@ const Footer = () => {
               </div>
             </div>
           </div>
+
           {/* Section 2 */}
           <div className="lg:w-[50%] flex flex-wrap flex-row justify-between pl-3 lg:pl-5 gap-3">
             {FooterLink2.map((ele, i) => {
@@ -147,7 +146,6 @@ const Footer = () => {
           </div>
         </div>
       </div>
-
 
       <div className="flex flex-row items-center justify-between w-11/12 max-w-maxContent text-richblack-400 mx-auto  pb-14 text-sm">
         {/* Section 1 */}
