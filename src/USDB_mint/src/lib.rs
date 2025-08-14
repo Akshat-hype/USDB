@@ -1,145 +1,67 @@
-use ic_cdk::{api::caller, query, update};
-use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
-use candid::Principal;
+use ic_cdk::export::candid::{CandidType, Deserialize};
+use ic_cdk::api::caller;
+use std::collections::HashMap;
 
-type UsdbAmount = u64;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-struct UserBalance {
-    principal: Principal,
-    amount: UsdbAmount,
+#[derive(CandidType, Deserialize, Clone)]
+struct Account {
+    balance: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct MintResult {
-    total_supply: UsdbAmount,
-    user_balance: UsdbAmount,
+static mut ACCOUNTS: Option<HashMap<String, Account>> = None;
+
+#[ic_cdk::init]
+fn init() {
+    unsafe {
+        ACCOUNTS = Some(HashMap::new());
+    }
+    ic_cdk::println!("USDB_mint canister initialized");
 }
 
-thread_local! {
-    static TOTAL_SUPPLY: RefCell<UsdbAmount> = RefCell::new(0);
-    static USER_BALANCES: RefCell<Vec<UserBalance>> = RefCell::new(Vec::new());
-}
+#[ic_cdk::update]
+fn mint(to: String, amount: u64) -> String {
+    let caller_id = caller().to_text();
+    ic_cdk::println!("Mint requested by: {}", caller_id);
 
-#[query]
-fn greet(name: String) -> String {
-    format!("Hello, {}!", name)
-}
-
-#[query]
-fn get_total_supply() -> UsdbAmount {
-    TOTAL_SUPPLY.with(|supply| *supply.borrow())
-}
-
-#[query]
-fn get_my_balance() -> UsdbAmount {
-    let current = caller();
-    USER_BALANCES.with(|balances| {
-        balances
-            .borrow()
-            .iter()
-            .find(|b| b.principal == current)
-            .map_or(0, |b| b.amount)
-    })
-}
-
-#[update]
-fn mint_usdb(amount: UsdbAmount) -> MintResult {
     if amount == 0 {
-        ic_cdk::trap("Amount must be greater than zero");
+        return "Mint amount must be greater than 0".to_string();
     }
 
-    let user = caller();
-
-    TOTAL_SUPPLY.with(|supply| {
-        *supply.borrow_mut() += amount;
-    });
-
-    USER_BALANCES.with(|user_balances| {
-        let mut balances = user_balances.borrow_mut();
-        if let Some(entry) = balances.iter_mut().find(|b| b.principal == user) {
-            entry.amount += amount;
-        } else {
-            balances.push(UserBalance {
-                principal: user,
-                amount,
-            });
-        }
-    });
-
-    ic_cdk::println!("Minted {} USDB for {}", amount, user);
-
-    MintResult {
-        total_supply: get_total_supply(),
-        user_balance: get_my_balance(),
+    unsafe {
+        let accounts = ACCOUNTS.as_mut().unwrap();
+        let entry = accounts.entry(to.clone()).or_insert(Account { balance: 0 });
+        entry.balance += amount;
+        ic_cdk::println!("Minted {} USDB to {}", amount, to);
     }
+
+    format!("Successfully minted {} USDB to {}", amount, to)
 }
 
-#[update]
-fn burn_usdb(amount: UsdbAmount) -> MintResult {
-    if amount == 0 {
-        ic_cdk::trap("Amount must be greater than zero");
-    }
-
-    let user = caller();
-
-    USER_BALANCES.with(|balances| {
-        let mut balances = balances.borrow_mut();
-        if let Some(entry) = balances.iter_mut().find(|b| b.principal == user) {
-            if let Some(new_amount) = entry.amount.checked_sub(amount) {
-                entry.amount = new_amount;
-                TOTAL_SUPPLY.with(|supply| {
-                    *supply.borrow_mut() -= amount;
-                });
-            } else {
-                ic_cdk::trap("Insufficient USDB balance to burn.");
+#[ic_cdk::update]
+fn burn(from: String, amount: u64) -> String {
+    unsafe {
+        let accounts = ACCOUNTS.as_mut().unwrap();
+        match accounts.get_mut(&from) {
+            Some(account) => {
+                if account.balance < amount {
+                    return "Insufficient balance to burn".to_string();
+                }
+                account.balance -= amount;
+                ic_cdk::println!("Burned {} USDB from {}", amount, from);
+                format!("Successfully burned {} USDB from {}", amount, from)
             }
-        } else {
-            ic_cdk::trap("No USDB balance found for caller.");
+            None => "Account not found".to_string(),
         }
-    });
-
-    ic_cdk::println!("Burned {} USDB from {}", amount, user);
-
-    MintResult {
-        total_supply: get_total_supply(),
-        user_balance: get_my_balance(),
     }
 }
 
-#[update]
-fn transfer_usdb(to: Principal, amount: UsdbAmount) {
-    if amount == 0 {
-        ic_cdk::trap("Amount must be greater than zero");
+#[ic_cdk::query]
+fn balance_of(owner: String) -> u64 {
+    unsafe {
+        ACCOUNTS
+            .as_ref()
+            .unwrap()
+            .get(&owner)
+            .map(|acc| acc.balance)
+            .unwrap_or(0)
     }
-
-    let from = caller();
-
-    // Deduct from sender
-    USER_BALANCES.with(|balances| {
-        let mut balances = balances.borrow_mut();
-        let sender_balance = balances
-            .iter_mut()
-            .find(|b| b.principal == from)
-            .unwrap_or_else(|| ic_cdk::trap("No balance found for sender"));
-
-        if let Some(new_amount) = sender_balance.amount.checked_sub(amount) {
-            sender_balance.amount = new_amount;
-        } else {
-            ic_cdk::trap("Insufficient balance for transfer");
-        }
-
-        // Add to recipient
-        if let Some(receiver) = balances.iter_mut().find(|b| b.principal == to) {
-            receiver.amount += amount;
-        } else {
-            balances.push(UserBalance {
-                principal: to,
-                amount,
-            });
-        }
-    });
-
-    ic_cdk::println!("Transferred {} USDB from {} to {}", amount, from, to);
 }
