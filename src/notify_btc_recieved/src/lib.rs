@@ -1,47 +1,36 @@
-use std::sync::mpsc::{Sender, Receiver, channel};
-
-/// Notification message for BTC received
-pub struct BtcReceivedNotification {
-    pub amount: f64,
-    pub from_address: String,
-    pub tx_id: String,
+#[derive(CandidType, Deserialize)]
+struct BtcDepositNotification {
+    btc_address: String,
+    txid: String,
+    amount_sats: u64,
+    usdb_amount: UsdbAmount,
+    receiver: Principal,
 }
 
-/// Notifier for BTC received events
-pub struct BtcNotifier {
-    sender: Sender<BtcReceivedNotification>,
-}
+#[update]
+fn notify_btc_received(notification: BtcDepositNotification) -> String {
+    let BtcDepositNotification {
+        receiver,
+        usdb_amount,
+        ..
+    } = notification;
 
-impl BtcNotifier {
-    /// Creates a new notifier and returns it along with its receiver
-    pub fn new() -> (Self, Receiver<BtcReceivedNotification>) {
-        let (sender, receiver) = channel();
-        (Self { sender }, receiver)
-    }
+    // Mint tokens to the user
+    TOTAL_SUPPLY.with(|supply| {
+        *supply.borrow_mut() += usdb_amount;
+    });
 
-    /// Send a notification
-    pub fn notify(&self, amount: f64, from_address: String, tx_id: String) {
-        let notification = BtcReceivedNotification {
-            amount,
-            from_address,
-            tx_id,
-        };
-        let _ = self.sender.send(notification);
-    }
-}
+    USER_BALANCES.with(|balances| {
+        let mut user_balances = balances.borrow_mut();
+        if let Some(entry) = user_balances.iter_mut().find(|b| b.principal == receiver) {
+            entry.amount += usdb_amount;
+        } else {
+            user_balances.push(UserBalance {
+                principal: receiver,
+                amount: usdb_amount,
+            });
+        }
+    });
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_btc_notifier() {
-        let (notifier, receiver) = BtcNotifier::new();
-        notifier.notify(0.5, "1BitcoinAddr".to_string(), "tx123".to_string());
-
-        let received = receiver.recv().unwrap();
-        assert_eq!(received.amount, 0.5);
-        assert_eq!(received.from_address, "1BitcoinAddr");
-        assert_eq!(received.tx_id, "tx123");
-    }
+    format!("✅ Minted {} USDB to {}", usdb_amount, receiver.to_text())
 }
