@@ -1,21 +1,3 @@
-use candid::{CandidType, Principal, candid_method};
-use ic_cdk_macros::update;
-use serde::Deserialize;
-use std::cell::RefCell;
-
-type UsdbAmount = u64;
-
-thread_local! {
-    static TOTAL_SUPPLY: RefCell<UsdbAmount> = RefCell::new(0);
-    static USER_BALANCES: RefCell<Vec<UserBalance>> = RefCell::new(Vec::new());
-}
-
-#[derive(CandidType, Deserialize, Clone)]
-struct UserBalance {
-    principal: Principal,
-    amount: UsdbAmount,
-}
-
 #[derive(CandidType, Deserialize)]
 struct BtcDepositNotification {
     btc_address: String,
@@ -26,7 +8,6 @@ struct BtcDepositNotification {
 }
 
 #[update]
-#[candid_method(update)]
 fn notify_btc_received(notification: BtcDepositNotification) -> String {
     let BtcDepositNotification {
         receiver,
