@@ -1,10 +1,3 @@
-use candid::{CandidType, Principal};
-use serde::Deserialize;
-use std::cell::RefCell;
-
-// Define UsdbAmount as a type alias for u64
-type UsdbAmount = u64;
-
 #[derive(CandidType, Deserialize)]
 struct BtcDepositNotification {
     btc_address: String,
@@ -13,21 +6,8 @@ struct BtcDepositNotification {
     usdb_amount: UsdbAmount,
     receiver: Principal,
 }
-#[derive(Clone)]
-#[allow(dead_code)]
-struct UserBalance {
-    principal: Principal,
-    amount: UsdbAmount,
-}
 
-// Static variable for total supply
-thread_local! {
-    static TOTAL_SUPPLY: RefCell<UsdbAmount> = RefCell::new(0);
-    static USER_BALANCES: RefCell<Vec<UserBalance>> = RefCell::new(Vec::new());
-}
-
-#[allow(dead_code)]
-// #[update]
+#[update]
 fn notify_btc_received(notification: BtcDepositNotification) -> String {
     let BtcDepositNotification {
         receiver,
@@ -35,11 +15,12 @@ fn notify_btc_received(notification: BtcDepositNotification) -> String {
         ..
     } = notification;
 
-    // Mint tokens to the user
+    // Increase total supply
     TOTAL_SUPPLY.with(|supply| {
         *supply.borrow_mut() += usdb_amount;
     });
 
+    // Update user balance
     USER_BALANCES.with(|balances| {
         let mut user_balances = balances.borrow_mut();
         if let Some(entry) = user_balances.iter_mut().find(|b| b.principal == receiver) {

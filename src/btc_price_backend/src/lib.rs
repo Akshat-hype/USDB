@@ -1,6 +1,7 @@
 use ic_cdk::api::management_canister::http_request::{
     http_request, CanisterHttpRequestArgument, HttpMethod,
 };
+
 use ic_cdk::update;
 use std::cell::RefCell;
 
@@ -45,11 +46,9 @@ async fn get_btc_price() -> String {
 }
 
 /// crude string-based extractor to get value from: {"symbol":"BTCUSDT","price":"67123.45"}
-
 fn extract_price(json_str: &str) -> Option<String> {
 
     // look for: "price":" and extract till next "
-
     let key = "\"price\":\"";
     if let Some(start) = json_str.find(key) {
         let from = start + key.len();
