@@ -202,7 +202,9 @@ fn get_cycles_used() -> u128 {
 /// Convert Unix epoch millis to an RFC3339 datetime string
 #[query]
 fn to_readable_timestamp(ts: u64) -> String {
-    use ::time::{OffsetDateTime, format_description::well_known::Rfc3339};
+    // Requires the "time" crate with the "formatting" and "macros" features enabled in Cargo.toml:
+    // time = { version = "0.3", features = ["formatting", "macros"] }
+    use time::{OffsetDateTime, format_description::well_known::Rfc3339};
     OffsetDateTime::from_unix_timestamp((ts / 1000) as i64)
         .map(|dt| dt.format(&Rfc3339).unwrap_or_else(|_| "Invalid timestamp".to_string()))
         .unwrap_or_else(|_| "Invalid timestamp".to_string())
