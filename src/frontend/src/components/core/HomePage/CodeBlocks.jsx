@@ -13,6 +13,7 @@ const CodeBlocks = ({
   backgroundGradient,
   codeColor,
 }) => {
+  
   return (
     <div className={`flex ${position} my-20 justify-between flex-col lg:gap-10 gap-10`}>
 

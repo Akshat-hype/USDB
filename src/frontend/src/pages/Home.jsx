@@ -9,12 +9,14 @@ const Home = () => {
     <div>
       <div className="relative mx-auto flex w-11/12 max-w-maxContent flex-col items-center justify-between gap-8 text-white">
         {/* //  {section 1}
+
             // Heading */}
         <div className=" mt-10 text-center text-4xl font-semibold">
           Borrow USDB instatly using
           <HighlightText text={"BTC "} />
           as Collateral
         </div>
+
         {/* subheading */}
 
         <div className="-mt-3 w-[90%] text-center text-lg font-bold text-richblack-300">
@@ -33,6 +35,7 @@ const Home = () => {
         </div>
 
         {/* Code Section 1  */}
+        
         <div>
           <CodeBlocks
             position={"lg:flex-row"}
