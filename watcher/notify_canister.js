@@ -1,17 +1,34 @@
-import { exec } from 'child_process';
+// notify_canister.js
+import { exec } from "child_process";
 
+/**
+ * Notify the canister about a new BTC transaction.
+ * @param {string} txid - The Bitcoin transaction ID
+ * @param {string} address - The receiving BTC address
+ * @param {number} amount - The amount in satoshis
+ */
 export function notifyCanister(txid, address, amount) {
-  const cmd = `didc call b77ix-eeaaa-aaaaa-qaada-cai deposit_btc '(record { txid = "${txid}"; address = "${address}"; amount = ${amount}; })'`;
+  // Replace with your actual canister ID
+  const canisterId = "b77ix-eeaaa-aaaaa-qaada-cai";
+
+  // Construct the didc call
+  const cmd = `didc call ${canisterId} deposit_btc '(record { txid = "${txid}"; btc_address = "${address}"; amount_sats = ${amount} })'`;
+
+  console.log("🚀 Executing command:", cmd);
 
   exec(cmd, (err, stdout, stderr) => {
     if (err) {
-      console.error(`❌ Error calling canister:`, err);
+      console.error("❌ Error calling canister:", err.message);
+      console.error("stderr:", stderr);
       return;
     }
-    console.log(`✅ Canister notified:`, stdout);
+    console.log("✅ Canister notified successfully!");
+    console.log("stdout:", stdout);
   });
 }
-notify_canister.js
-// export function notifyCanister(txid, address, amount) {
-//   console.log(`📢 Notify: TXID=${txid}, Address=${address}, Amount=${amount} sats`);
-// }
+
+// Example direct call (for testing)
+if (process.argv.length === 5) {
+  const [,, txid, address, amount] = process.argv;
+  notifyCanister(txid, address, parseInt(amount, 10));
+}
