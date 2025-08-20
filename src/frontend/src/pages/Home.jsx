@@ -45,6 +45,7 @@ const Home = () => {
                 <HighlightText text={"BTC-pegged"} /> stablecoin on Runes.
               </div>
             }
+            
             subheading={
               "The USDB token is the first BTC-L1-native decentralised stablecoin, which you can borrow using your BTC as collateral."
             }
