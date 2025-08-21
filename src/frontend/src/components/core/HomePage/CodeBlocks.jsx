@@ -60,7 +60,6 @@ const CodeBlocks = ({
         </div>
 
         {/* Codes */}
-
         <div
           className={`w-[90%] flex flex-col gap-2 font-bold font-mono ${codeColor} pr-1`}
         >
