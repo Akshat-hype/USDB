@@ -1,44 +1,33 @@
-// watcher.js
-import { Actor, HttpAgent } from "@dfinity/agent";
-import fetch from "node-fetch";
+import { exec } from "child_process";
 
-// Replace with your actual canister ID
-const CANISTER_ID = "your-canister-id-here";
+/**
+ * Notify the canister about a new BTC transaction.
+ * @param {string} txid - The Bitcoin transaction ID
+ * @param {string} address - The receiving BTC address
+ * @param {number} amount - The amount in satoshis
+ */
+export function notifyCanister(txid, address, amount) {
+  // Replace with your actual canister ID
+  const canisterId = "avqkn-guaaa-aaaaa-qaaea-cai";
 
-// Import your canister interface (IDL)
-import { idlFactory as notify_idl } from "./notify_canister.did.js";
+  // Construct the didc call
+  const cmd = `didc call ${canisterId} deposit_btc '(record { txid = "${txid}"; btc_address = "${address}"; amount_sats = ${amount} })'`;
 
-async function main() {
-  try {
-    // Setup Agent
-    const agent = new HttpAgent({ host: "http://127.0.0.1:4943", fetch });
+  console.log("🚀 Executing command:", cmd);
 
-    // Only required in local dev
-    await agent.fetchRootKey();
-
-    // Create Actor for your notify canister
-    const notifyActor = Actor.createActor(notify_idl, {
-      agent,
-      canisterId: CANISTER_ID,
-    });
-
-    console.log("Watcher started...");
-
-    // Example: simulate watcher detecting something
-    setInterval(async () => {
-      console.log("Watcher detected an event, notifying canister...");
-
-      try {
-        // Call your canister's notify function
-        const response = await notifyActor.notify_canister("Watcher triggered");
-        console.log("Canister response:", response);
-      } catch (err) {
-        console.error("Error notifying canister:", err);
-      }
-    }, 10000); // every 10 sec
-  } catch (e) {
-    console.error("Watcher error:", e);
-  }
+  exec(cmd, (err, stdout, stderr) => {
+    if (err) {
+      console.error("❌ Error calling canister:", err.message);
+      console.error("stderr:", stderr);
+      return;
+    }
+    console.log("✅ Canister notified successfully!");
+    console.log("stdout:", stdout);
+  });
 }
 
-main();
+// Example direct call (for testing)
+if (process.argv.length === 5) {
+  const [,, txid, address, amount] = process.argv;
+  notifyCanister(txid, address, parseInt(amount, 10));
+}
