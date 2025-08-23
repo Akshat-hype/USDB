@@ -8,6 +8,7 @@ export const FooterLink2 = [
       { title: "Spend", link: "/spend" },
     ],
   },
+
   {
     title: "Navigation",
     links: [
@@ -19,6 +20,7 @@ export const FooterLink2 = [
       { title: "Tools", link: "/tools" },
     ],
   },
+  
   {
     title: "Explore",
     links: [
