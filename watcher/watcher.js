@@ -21,15 +21,24 @@ function getLatestBlock() {
 }
 
 // Notify the canister with txid, address, sats, usdb_amount, and receiver
-function notifyCanister(txid, btcAddress, amountSats, usdbAmount, receiver) {
+function notifyCanister(blockData) {
+  // 🔹 Replace with your actual canister ID
   const canisterId = "avqkn-guaaa-aaaaa-qaaea-cai";
 
-  const cmd = `didc call ${canisterId} notify_btc_received '(record {
-    btc_address = "${btcAddress}";
+  // For now, we’ll just send dummy TX data (later you can extract real txs)
+  const txid = "dummy-txid-";
+  const address = "bcrt1qexampleaddress"; // replace with real watched address
+  const amount_sats = 50000; // example sats
+  const usdb_amount = 50;    // mapped USDB amount
+  const receiver = 'principal "aaaaa-aa"';
+
+  // Build the command using dfx
+  const cmd = `dfx canister call ${canisterId} notify_btc_received '(record {
+    btc_address = "${address}";
     txid = "${txid}";
-    amount_sats = ${amountSats};
-    usdb_amount = ${usdbAmount};
-    receiver = principal "${receiver}";
+    amount_sats = ${amount_sats};
+    usdb_amount = ${usdb_amount};
+    receiver = ${receiver};
   })'`;
 
   console.log("🚀 Executing:", cmd);
